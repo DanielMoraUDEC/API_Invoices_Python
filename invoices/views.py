@@ -58,15 +58,24 @@ class InvoiceView(APIView):
 
         if(_auth.validToken(token)):
             jd = json.loads(request.body)
-            Invoice.objects.create(
-                userid = jd['userid'],
-                itemid = jd['itemid'],
-                unitprice = jd['unitprice'],
-                quantity = jd['quantity'],
-                invoicetotal = jd['invoicetotal']
-            )
-            datos = {'message': 'success'}
-            return JsonResponse(datos)
+
+            # Update qty available by product
+            _sharedServices = sharedServices()
+            result = _sharedServices.updateQtyAvailableByProduct(jd['itemid'],jd['quantity'])
+            if (result):
+                Invoice.objects.create(
+                    userid = jd['userid'],
+                    itemid = jd['itemid'],
+                    unitprice = jd['unitprice'],
+                    quantity = jd['quantity'],
+                    invoicetotal = jd['invoicetotal']
+                )
+                datos = {'message': 'success', 'success': True}
+                return JsonResponse(datos)
+            else:
+                datos = {'message': 'No fue posible actualizar el inventario. Comuníquese con atención al cliente. ', 'success': False}
+                return JsonResponse(datos)
+
         else:
             datos = {'message':"No autorizado", 'success':False}
             return JsonResponse(datos)
@@ -81,18 +90,26 @@ class InvoiceView(APIView):
 
         if(_auth.validToken(token)):
             jd = json.loads(request.body)
-            invoice = list(Invoice.objects.filter(id=id).values())
-            if len(invoice) > 0:
-                invoice = Invoice.objects.get(id=id)
-                invoice.userid = jd['userid']
-                invoice.itemid = jd['itemid']
-                invoice.unitprice = jd['unitprice']
-                invoice.quantity = jd['quantity']
-                invoice.invoicetotal = jd['invoicetotal']
-                invoice.save()
-                datos = {'message': 'success'}
-            else :
-                datos = {'message': 'Invoice not found...'}
+            
+            # Update qty available by product
+            _sharedServices = sharedServices()
+            result = _sharedServices.updateQtyAvailableByProduct(jd['itemid'],jd['quantity'])
+            if (result):
+                invoice = list(Invoice.objects.filter(id=id).values())
+                if len(invoice) > 0:
+                    invoice = Invoice.objects.get(id=id)
+                    invoice.userid = jd['userid']
+                    invoice.itemid = jd['itemid']
+                    invoice.unitprice = jd['unitprice']
+                    invoice.quantity = jd['quantity']
+                    invoice.invoicetotal = jd['invoicetotal']
+                    invoice.save()
+                    datos = {'message': 'success', 'success':True}
+                else :
+                    datos = {'message': 'Invoice not found...', 'success':False}
+            else:
+                datos = {'message': 'No fue posible actualizar el inventario. Comuníquese con atención al cliente.', 'success': False}
+                return JsonResponse(datos)
 
             return JsonResponse(datos)
         else:
@@ -110,8 +127,17 @@ class InvoiceView(APIView):
         if(_auth.validToken(token)):
             invoice = list(Invoice.objects.filter(id=id).values())
             if len(invoice) > 0:
-                Invoice.objects.filter(id=id).delete()
-                datos = {'message': 'success'}
+                print(invoice)
+                # Update qty available by product
+                _sharedServices = sharedServices()
+                result = _sharedServices.updateQtyAvailableByProduct(invoice[0]['itemid'], invoice[0]['quantity']*-1)
+                if (result):
+                    Invoice.objects.filter(id=id).delete()
+                    datos = {'message': 'success', 'success': True}
+                else:
+                    datos = {'message': 'No fue posible actualizar el inventario. Comuníquese con atención al cliente.', 'success': False}
+                    return JsonResponse(datos)
+
             else :
                 datos = {'message': 'Invoice not found...'}
             return JsonResponse(datos)

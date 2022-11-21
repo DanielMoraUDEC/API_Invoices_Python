@@ -1,5 +1,6 @@
 import json
 from msilib.schema import Class
+from pickle import FALSE
 import requests
 
 class auth():
@@ -25,4 +26,12 @@ class sharedServices():
         users = r.json()
         return users
         #users = json.load(result)
+    
+    def updateQtyAvailableByProduct(self, id, qtyInvoice):
+        url = "http://localhost:10000/product/updateResta/"+str(id)+"/"+str(qtyInvoice)
+        r = requests.put(url, verify=False)
+        result = r.json()
+        data = bool(result)
+        return True
+
 
